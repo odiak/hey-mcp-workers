@@ -46,8 +46,8 @@ Do not use this directory for regular local CLI operations after uploading. Refr
 
 ## Deploy to Cloudflare
 
-1. Set `PUBLIC_ORIGIN` in `wrangler.jsonc` to your public HTTPS origin, without a trailing `/`. For a custom domain, configure the corresponding `routes` as well.
-2. Check the target Cloudflare account and Worker name. Current Wrangler versions can create `OAUTH_KV` during the first deployment when its ID is omitted. To use an existing KV namespace, set its namespace ID.
+1. Check the target Cloudflare account and Worker name. The server derives its public URLs from the incoming request URL, so no public-origin variable is needed. For a custom domain, configure the corresponding `routes` in `wrangler.jsonc`.
+2. Check the `OAUTH_KV` namespace ID. To use an existing KV namespace, set its ID. For a new deployment, remove the existing ID so Wrangler can create a namespace in your account.
 3. Generate and register separate production secrets, then deploy.
 
 ```sh
@@ -63,7 +63,7 @@ Back up the production encryption key securely. Losing it makes the stored crede
 
 ## Connect an MCP client
 
-Register `https://<PUBLIC_ORIGIN host>/mcp` in your client. Authentication uses the OAuth authorization code flow with PKCE S256. After signing in as the admin, review the connection name, redirect destination, and permissions, and explicitly approve each connection.
+Register `https://<your-worker-host>/mcp` in your client. Use the same host throughout authentication and subsequent MCP requests; tokens are bound to that URL. Authentication uses the OAuth authorization code flow with PKCE S256. After signing in as the admin, review the connection name, redirect destination, and permissions, and explicitly approve each connection.
 
 | Scope | Allowed operations |
 | --- | --- |

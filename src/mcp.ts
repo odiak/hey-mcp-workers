@@ -7,10 +7,10 @@ import { authProps, authorizationServer, type AuthProps } from './oauth';
 import { HttpError } from './security';
 import { unwrap } from './owner';
 
-export function resourceServer(env: CloudflareEnv) {
-  const authServer = authorizationServer(env);
+export function resourceServer(env: CloudflareEnv, origin: string) {
+  const authServer = authorizationServer(env, origin);
   return new OAuthResourceServer<CloudflareEnv, AuthProps>({
-    resourceMetadata: { resource: `${env.PUBLIC_ORIGIN}/mcp`, authorization_servers: [env.PUBLIC_ORIGIN], resource_name: 'Personal HEY MCP' },
+    resourceMetadata: { resource: `${origin}/mcp`, authorization_servers: [origin], resource_name: 'Personal HEY MCP' },
     requiredScopes: ['hey:read'],
     validateToken: env => async (resource, token) => {
       const value = await authServer.validateToken<unknown>(resource, token, env);
@@ -66,8 +66,8 @@ export function resourceServer(env: CloudflareEnv) {
         };
         return createMcpHandler(createServer, {
           route: '/mcp', corsOptions: false,
-          allowedHostnames: [new URL(env.PUBLIC_ORIGIN).hostname],
-          allowedOriginHostnames: [new URL(env.PUBLIC_ORIGIN).hostname],
+          allowedHostnames: [new URL(origin).hostname],
+          allowedOriginHostnames: [new URL(origin).hostname],
         })(request, env, ctx);
       },
     },

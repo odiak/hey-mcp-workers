@@ -6,10 +6,10 @@ import { hash } from './security';
 export const authProps = z.object({ connectionId: z.uuid() });
 export type AuthProps = z.infer<typeof authProps>;
 
-export function authorizationServer(env: CloudflareEnv): OAuthAuthorizationServer<CloudflareEnv> {
+export function authorizationServer(env: CloudflareEnv, origin: string): OAuthAuthorizationServer<CloudflareEnv> {
   return new OAuthAuthorizationServer<CloudflareEnv>({
-    issuer: env.PUBLIC_ORIGIN,
-    resources: [`${env.PUBLIC_ORIGIN}/mcp`],
+    issuer: origin,
+    resources: [`${origin}/mcp`],
     authorizeEndpoint: '/authorize', tokenEndpoint: '/oauth/token',
     clientRegistrationEndpoint: '/oauth/register',
     clientIdMetadataDocumentEnabled: true,

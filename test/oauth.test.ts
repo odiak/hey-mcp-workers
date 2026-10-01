@@ -5,10 +5,10 @@ import { unwrap } from '../src/owner';
 import { authorizationServer } from '../src/oauth';
 
 const origin = 'https://hey-mcp.example';
-const request = (path: string, init?: RequestInit) => {
+const request = (path: string, init?: RequestInit, baseOrigin = origin) => {
   const headers = new Headers(init?.headers);
-  headers.set('Host', new URL(origin).host);
-  return exports.default.fetch(`${origin}${path}`, { ...init, headers, redirect: 'manual' });
+  headers.set('Host', new URL(baseOrigin).host);
+  return exports.default.fetch(`${baseOrigin}${path}`, { ...init, headers, redirect: 'manual' });
 };
 const textInput = (html: string, name: string) => html.match(new RegExp(`name="${name}" value="([^"]+)"`))?.[1] ?? '';
 function cookies(response: Response): string {
@@ -105,6 +105,34 @@ describe('HTTP and OAuth boundaries', () => {
     expect(protectedResource.resource).toBe(`${origin}/mcp`);
     expect(protectedResource.scopes_supported).toEqual(['hey:read']);
   });
+  it('derives OAuth metadata from each request URL and ignores forwarded hosts', async () => {
+    for (const host of ['https://hey-mcp.example.workers.dev', 'https://mail.example']) {
+      const headers = { 'X-Forwarded-Host': 'attacker.example', 'X-Forwarded-Proto': 'http' };
+      const response = await request('/.well-known/oauth-authorization-server', { headers }, host);
+      expect(response.status).toBe(200);
+      const metadata = await response.json() as Record<string, unknown>;
+      expect(metadata.issuer).toBe(host);
+      expect(metadata.authorization_endpoint).toBe(`${host}/authorize`);
+      expect(metadata.token_endpoint).toBe(`${host}/oauth/token`);
+      const resource = await (await request('/.well-known/oauth-protected-resource/mcp', { headers }, host)).json() as Record<string, unknown>;
+      expect(resource.resource).toBe(`${host}/mcp`);
+      expect(resource.authorization_servers).toEqual([host]);
+    }
+  });
+  it('accepts local HTTP development URLs and rejects remote HTTP', async () => {
+    const local = await request('/login', undefined, 'http://localhost:9898');
+    expect(local.status).toBe(200);
+    expect(local.headers.has('Strict-Transport-Security')).toBe(false);
+    const login = await request('/login', { method: 'POST', headers: { Origin: 'http://localhost:9898' },
+      body: new URLSearchParams({ secret: env.ADMIN_SECRET }) }, 'http://localhost:9898');
+    expect(login.status).toBe(303);
+    const admin = await request('/admin', { headers: { Cookie: cookies(login) } }, 'http://localhost:9898');
+    expect(await admin.text()).toContain('http://localhost:9898/mcp');
+    const forged = await request('/logout', { method: 'POST', headers: { Origin: origin },
+      body: new URLSearchParams() }, 'http://localhost:9898');
+    expect(forged.status).toBe(403);
+    expect((await request('/login', undefined, 'http://hey-mcp.example')).status).toBe(400);
+  });
   it('requires browser-bound consent and honors denial', async () => {
     const info = await setup();
     const forged = await request('/authorize', { method: 'POST', headers: { Origin: origin, Cookie: info.cookie.split('; ')[0] },
@@ -144,7 +172,9 @@ describe('HTTP and OAuth boundaries', () => {
     expect(refreshed.status).toBe(200);
     const rotated = await refreshed.json() as { access_token: string; refresh_token: string };
     expect(rotated.refresh_token).not.toBe(tokens.refresh_token);
-    const summary = await authorizationServer(env).getOAuthApi(env).unwrapToken<{ connectionId: string }>(tokens.access_token);
+    const otherOrigin = 'https://another-worker.example';
+    expect((await request('/mcp', { headers: { Authorization: `Bearer ${tokens.access_token}` } }, otherOrigin)).status).toBe(401);
+    const summary = await authorizationServer(env, origin).getOAuthApi(env).unwrapToken<{ connectionId: string }>(tokens.access_token);
     expect(summary).not.toBeNull();
     const revoked = await request('/admin/revoke', { method: 'POST', headers: { Origin: origin, Cookie: info.cookie },
       body: new URLSearchParams({ csrf: info.csrf, id: summary!.grant.props.connectionId }) });

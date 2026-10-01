@@ -30,9 +30,8 @@ async function form(request: Request): Promise<FormData> {
 
 async function handle(request: Request, env: CloudflareEnv, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
-  const origin = new URL(env.PUBLIC_ORIGIN);
-  if (origin.origin !== env.PUBLIC_ORIGIN || (origin.protocol !== 'https:' && !(origin.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)))) throw new HttpError(503, 'PUBLIC_ORIGINに公開HTTPS URLを設定してください。');
-  if (url.origin !== origin.origin) throw new HttpError(421, '公開URLが設定と一致しません。');
+  const origin = url.origin;
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new HttpError(400, 'HTTPSでアクセスしてください。HTTPはローカル開発でのみ利用できます。');
   if (!env.ADMIN_SECRET || env.ADMIN_SECRET.length < 32 || !env.ENCRYPTION_KEY) throw new HttpError(503, '2つのWorkers secretsを設定してください。管理用シークレットは32文字以上必要です。');
   if (request.method === 'POST') {
     const max = url.pathname === '/mcp' ? 1024 * 1024 : 64 * 1024;
@@ -40,14 +39,14 @@ async function handle(request: Request, env: CloudflareEnv, ctx: ExecutionContex
     request = new Request(request, { body });
   }
   const owner = env.OWNER.getByName('owner');
-  const oauth = authorizationServer(env).getOAuthApi(env);
+  const oauth = authorizationServer(env, origin).getOAuthApi(env);
 
-  if (url.pathname === '/mcp' || url.pathname.startsWith('/.well-known/oauth-protected-resource')) return resourceServer(env).fetch(request, env, ctx);
-  if (url.pathname.startsWith('/.well-known/') || url.pathname.startsWith('/oauth/')) return authorizationServer(env).fetch(request, env, ctx);
+  if (url.pathname === '/mcp' || url.pathname.startsWith('/.well-known/oauth-protected-resource')) return resourceServer(env, origin).fetch(request, env, ctx);
+  if (url.pathname.startsWith('/.well-known/') || url.pathname.startsWith('/oauth/')) return authorizationServer(env, origin).fetch(request, env, ctx);
   if (url.pathname === '/') return redirect('/admin');
   if (!['/login', '/logout', '/admin', '/authorize'].includes(url.pathname) && !url.pathname.startsWith('/admin/')) throw new HttpError(404, 'ページが見つかりません。');
   if (!['GET', 'POST'].includes(request.method)) throw new HttpError(405, 'このHTTPメソッドは使えません。');
-  if (request.method === 'POST') sameOrigin(request, env.PUBLIC_ORIGIN);
+  if (request.method === 'POST') sameOrigin(request, origin);
 
   if (url.pathname === '/login') {
     if (request.method === 'GET') return loginPage(nextPath(url.searchParams.get('next')));
@@ -65,7 +64,7 @@ async function handle(request: Request, env: CloudflareEnv, ctx: ExecutionContex
     return loginPage(`${url.pathname}${url.search}`);
   }
   if (request.method === 'GET') {
-    if (url.pathname === '/admin') return adminPage(session, await owner.status(), await owner.connections(), env.PUBLIC_ORIGIN);
+    if (url.pathname === '/admin') return adminPage(session, await owner.status(), await owner.connections(), origin);
     if (url.pathname === '/authorize') {
       const parsed = await oauth.parseAuthRequest(request);
       if (!parsed.codeChallenge || parsed.codeChallengeMethod !== 'S256') throw new HttpError(400, 'PKCE S256が必要です。');
@@ -133,7 +132,7 @@ async function handle(request: Request, env: CloudflareEnv, ctx: ExecutionContex
     default: throw new HttpError(404, 'ページが見つかりません。');
   }
   // Render directly: the message is not put in a URL or a cookie.
-  return adminPage(session, await owner.status(), await owner.connections(), env.PUBLIC_ORIGIN, message);
+  return adminPage(session, await owner.status(), await owner.connections(), origin, message);
 }
 
 export default {
@@ -157,7 +156,7 @@ export default {
       if (key === 'Content-Security-Policy' && secured.headers.has(key)) continue;
       secured.headers.set(key, value);
     }
-    if (env.PUBLIC_ORIGIN.startsWith('https:')) secured.headers.set('Strict-Transport-Security', 'max-age=31536000');
+    if (new URL(request.url).protocol === 'https:') secured.headers.set('Strict-Transport-Security', 'max-age=31536000');
     return secured;
   },
 } satisfies ExportedHandler<CloudflareEnv>;

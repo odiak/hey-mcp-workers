@@ -46,8 +46,8 @@ XDG_CONFIG_HOME="$HOME/.config/hey-mcp-bootstrap" \
 
 ## Cloudflareへデプロイする
 
-1. `wrangler.jsonc`の`PUBLIC_ORIGIN`を、使用する公開HTTPS origin（末尾の`/`なし）に変更します。カスタムドメインなら対応する`routes`も設定します。
-2. 対象CloudflareアカウントとWorker名を確認します。現在のWranglerでは、IDを省略した`OAUTH_KV`は初回デプロイ時に作成できます。既存KVを使う場合は、そのnamespace IDを設定してください。
+1. 対象CloudflareアカウントとWorker名を確認します。公開URLはリクエストURLから取得するため、originの環境変数は不要です。カスタムドメインなら`wrangler.jsonc`に対応する`routes`を設定します。
+2. `OAUTH_KV`のnamespace IDを確認します。既存KVを使う場合は、そのIDを設定してください。新規デプロイでは既存のIDを削除すると、Wranglerが自分のアカウントにnamespaceを作成できます。
 3. 本番専用のsecretを生成して登録し、デプロイします。
 
 ```sh
@@ -63,7 +63,7 @@ npm run deploy
 
 ## MCPクライアントを接続する
 
-クライアントに`https://<PUBLIC_ORIGINのホスト>/mcp`を登録してください。認可コード＋PKCE S256によるOAuthを使い、管理ログイン後、連携名・リダイレクト先・権限を確認して毎回承認します。
+クライアントに`https://<Workerのホスト>/mcp`を登録してください。認証からMCPの利用まで同じホストを使います。トークンはそのURLにひも付きます。認可コード＋PKCE S256によるOAuthを使い、管理ログイン後、連携名・リダイレクト先・権限を確認して毎回承認します。
 
 | Scope | 許可する操作 |
 | --- | --- |
