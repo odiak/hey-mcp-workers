@@ -1,0 +1,2403 @@
+[
+  {
+    "domain": "search",
+    "action": "advanced_search",
+    "id": "AdvancedSearch",
+    "method": "GET",
+    "path": "/advanced_search.json",
+    "description": "Get the options the advanced search refine form offers.\n\nAdvanced search: message matches grouped by topic as the search page shows them —\nthe topic, its posting id, and the matching entries as summaries (no bodies; read a\nmessage with GetMessage). Refinements are the same query parameters the page uses.\nThe next page, if any, is a Link header.",
+    "readonly": true,
+    "params": [
+      {
+        "name": "q",
+        "in": "query"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      },
+      {
+        "name": "refine[from]",
+        "in": "query"
+      },
+      {
+        "name": "refine[to]",
+        "in": "query"
+      },
+      {
+        "name": "refine[subject]",
+        "in": "query"
+      },
+      {
+        "name": "refine[exact_phrase]",
+        "in": "query"
+      },
+      {
+        "name": "refine[required]",
+        "in": "query"
+      },
+      {
+        "name": "refine[any]",
+        "in": "query"
+      },
+      {
+        "name": "refine[none]",
+        "in": "query"
+      },
+      {
+        "name": "refine[date]",
+        "in": "query"
+      },
+      {
+        "name": "refine[in]",
+        "in": "query"
+      },
+      {
+        "name": "refine[label]",
+        "in": "query"
+      },
+      {
+        "name": "refine[attachment]",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "The words to search for"
+        },
+        "page": {
+          "type": "string"
+        },
+        "refine[from]": {
+          "type": "string",
+          "description": "Refinements, e.g. refine[from], refine[to], refine[subject], refine[exact_phrase],\nrefine[required], refine[any], refine[none], refine[date], refine[in], refine[label],\nrefine[attachment] — passed through as the page sends them."
+        },
+        "refine[to]": {
+          "type": "string"
+        },
+        "refine[subject]": {
+          "type": "string"
+        },
+        "refine[exact_phrase]": {
+          "type": "string"
+        },
+        "refine[required]": {
+          "type": "string"
+        },
+        "refine[any]": {
+          "type": "string"
+        },
+        "refine[none]": {
+          "type": "string"
+        },
+        "refine[date]": {
+          "type": "string"
+        },
+        "refine[in]": {
+          "type": "string"
+        },
+        "refine[label]": {
+          "type": "string"
+        },
+        "refine[attachment]": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "search",
+    "action": "get_advanced_search_filters",
+    "id": "GetAdvancedSearchFilters",
+    "method": "GET",
+    "path": "/advanced_search_filters.json",
+    "description": "The advanced search refine form's options: boxes, date ranges, labels and attachment kinds.",
+    "readonly": true,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "list_boxes",
+    "id": "ListBoxes",
+    "method": "GET",
+    "path": "/boxes.json",
+    "description": "List all boxes",
+    "readonly": true,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_box",
+    "id": "GetBox",
+    "method": "GET",
+    "path": "/boxes/{boxId}",
+    "description": "Get a specific box",
+    "readonly": true,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "create_box_designation",
+    "id": "CreateBoxDesignation",
+    "method": "POST",
+    "path": "/boxes/{boxId}/designations.json",
+    "description": "Designate a contact to a box, so everything they send lands there",
+    "readonly": false,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contact_id": {
+          "type": "integer"
+        },
+        "boxId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "contact_id",
+        "boxId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "delete_box_designation",
+    "id": "DeleteBoxDesignation",
+    "method": "DELETE",
+    "path": "/boxes/{boxId}/designations/{designationId}",
+    "description": "Remove a designation from a box. The id is the designation's, not the contact's.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      },
+      {
+        "name": "designationId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        },
+        "designationId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId",
+        "designationId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "list_box_groups",
+    "id": "ListBoxGroups",
+    "method": "GET",
+    "path": "/boxes/{boxId}/groups.json",
+    "description": "List the Set Aside groups in a box",
+    "readonly": true,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "create_box_group",
+    "id": "CreateBoxGroup",
+    "method": "POST",
+    "path": "/boxes/{boxId}/groups.json",
+    "description": "Create a Set Aside group out of a selection of postings.\n\nThis endpoint does not split a comma-joined posting_ids string — send an array.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "posting_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "boxId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "posting_ids",
+        "boxId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "delete_box_group",
+    "id": "DeleteBoxGroup",
+    "method": "DELETE",
+    "path": "/boxes/{boxId}/groups/{groupId}",
+    "description": "Break up a Set Aside group, moving its postings back to Previously Seen",
+    "readonly": false,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      },
+      {
+        "name": "groupId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        },
+        "groupId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId",
+        "groupId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_box_group",
+    "id": "GetBoxGroup",
+    "method": "GET",
+    "path": "/boxes/{boxId}/groups/{groupId}",
+    "description": "Read one Set Aside group with the postings in it.\n\nThe postings are paged like a folder's: newest observed first, 30 to a page, with the\nnext page in the Link header and the total in X-Total-Count.",
+    "readonly": true,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      },
+      {
+        "name": "groupId",
+        "in": "path"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        },
+        "groupId": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId",
+        "groupId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "mark_box_seen",
+    "id": "MarkBoxSeen",
+    "method": "POST",
+    "path": "/boxes/{boxId}/observation.json",
+    "description": "Mark everything in a box as seen. The work is queued, so the effect is eventually consistent.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_box_posting_changes",
+    "id": "GetBoxPostingChanges",
+    "method": "GET",
+    "path": "/boxes/{boxId}/postings/changes.json",
+    "description": "Read what changed among a box's postings since a point in time.\n\nThis is the incremental sync feed the mail clients follow rather than re-reading a\nbox. `since` is an ISO 8601 timestamp with milliseconds and is exclusive, and `v` is\nthe client's contract version — the server answers 409 when the caller is too far\nbehind for an increment to carry the difference, which means read the box in full\ninstead. A box's own `posting_changes_url` carries the `since` and `v` to start from,\nand the `Link` header names the next page while one remains and the next `since`\ncursor on the last page.",
+    "readonly": true,
+    "params": [
+      {
+        "name": "boxId",
+        "in": "path"
+      },
+      {
+        "name": "since",
+        "in": "query"
+      },
+      {
+        "name": "v",
+        "in": "query"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      },
+      {
+        "name": "per_page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "integer"
+        },
+        "since": {
+          "type": "string"
+        },
+        "v": {
+          "type": "string"
+        },
+        "page": {
+          "type": "string"
+        },
+        "per_page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "boxId",
+        "since"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_bubblebox",
+    "id": "GetBubblebox",
+    "method": "GET",
+    "path": "/bubble_up.json",
+    "description": "Get the Bubble Up box",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "identity",
+    "action": "update_first_week_day",
+    "id": "UpdateFirstWeekDay",
+    "method": "PUT",
+    "path": "/calendar/identity/first_week_day",
+    "description": "Set which day the identity's calendar weeks start on. Answers the stored\npreference. The write reaches every HEY client — web, mobile and this SDK\nread the same identity preference.",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {identity_preference: {first_week_day: \"monday\"}}",
+      "properties": {
+        "identity_preference": {
+          "type": "object",
+          "properties": {
+            "first_week_day": {
+              "type": "string",
+              "description": "Lowercase day name, sunday through saturday."
+            }
+          },
+          "required": [
+            "first_week_day"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "identity_preference"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "todos",
+    "action": "create_calendar_todo",
+    "id": "CreateCalendarTodo",
+    "method": "POST",
+    "path": "/calendar/todos.json",
+    "description": "Create a calendar todo",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {calendar_todo: {title, starts_at}}",
+      "properties": {
+        "calendar_todo": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "starts_at": {
+              "type": "string",
+              "description": "Date string (YYYY-MM-DD). Defaults to today if omitted."
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "calendar_todo"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "todos",
+    "action": "delete_calendar_todo",
+    "id": "DeleteCalendarTodo",
+    "method": "DELETE",
+    "path": "/calendar/todos/{todoId}",
+    "description": "Delete a calendar todo",
+    "readonly": false,
+    "params": [
+      {
+        "name": "todoId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "todoId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "todoId"
+      ]
+    }
+  },
+  {
+    "domain": "todos",
+    "action": "update_calendar_todo",
+    "id": "UpdateCalendarTodo",
+    "method": "PATCH",
+    "path": "/calendar/todos/{todoId}",
+    "description": "Edit a calendar todo. todoId is the recording's id, and every field of the payload\nis optional: haystack's `wrap_parameters` accepts title, focused and starts_at, and\nchanges only what is sent.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "todoId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {calendar_todo: {title, starts_at, focused}}",
+      "properties": {
+        "calendar_todo": {
+          "type": "object",
+          "description": "Nothing here is required: a rename sends a title and leaves the day alone.",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "starts_at": {
+              "type": "string",
+              "description": "Date string (YYYY-MM-DD). The day the todo is filed on."
+            },
+            "focused": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "todoId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "calendar_todo",
+        "todoId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "todos",
+    "action": "uncomplete_calendar_todo",
+    "id": "UncompleteCalendarTodo",
+    "method": "DELETE",
+    "path": "/calendar/todos/{todoId}/completions",
+    "description": "Uncomplete a calendar todo",
+    "readonly": false,
+    "params": [
+      {
+        "name": "todoId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "todoId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "todoId"
+      ]
+    }
+  },
+  {
+    "domain": "todos",
+    "action": "complete_calendar_todo",
+    "id": "CompleteCalendarTodo",
+    "method": "POST",
+    "path": "/calendar/todos/{todoId}/completions",
+    "description": "Complete a calendar todo",
+    "readonly": false,
+    "params": [
+      {
+        "name": "todoId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "todoId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "todoId"
+      ]
+    }
+  },
+  {
+    "domain": "calendar",
+    "action": "list_calendars",
+    "id": "ListCalendars",
+    "method": "GET",
+    "path": "/calendars.json",
+    "description": "List calendars",
+    "readonly": true,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "calendar",
+    "action": "get_calendar_recordings",
+    "id": "GetCalendarRecordings",
+    "method": "GET",
+    "path": "/calendars/{calendarId}/recordings",
+    "description": "Get recordings for a calendar",
+    "readonly": true,
+    "params": [
+      {
+        "name": "calendarId",
+        "in": "path"
+      },
+      {
+        "name": "starts_on",
+        "in": "query"
+      },
+      {
+        "name": "ends_on",
+        "in": "query"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "calendarId": {
+          "type": "integer"
+        },
+        "starts_on": {
+          "type": "string"
+        },
+        "ends_on": {
+          "type": "string"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "calendarId"
+      ]
+    }
+  },
+  {
+    "domain": "calendar",
+    "action": "toggle_calendar",
+    "id": "ToggleCalendar",
+    "method": "POST",
+    "path": "/calendars/{calendarId}/toggle",
+    "description": "Switch a calendar in or out of the reader's selection, and answer the selection it\nleft behind. The selection is what every period read is scoped to, so a toggle is how\na client changes which calendars a day, week or year is drawn from.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "calendarId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "calendarId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "calendarId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "get_clearances",
+    "id": "GetClearances",
+    "method": "GET",
+    "path": "/clearances.json",
+    "description": "Get the Screener — the pending count, and the senders waiting when asked for them",
+    "readonly": true,
+    "params": [
+      {
+        "name": "include_clearances",
+        "in": "query"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "include_clearances": {
+          "type": "boolean"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "bulk_update_clearances",
+    "id": "BulkUpdateClearances",
+    "method": "PATCH",
+    "path": "/clearances/bulk.json",
+    "description": "Screen several senders out at once. ids is a comma-separated list.",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "spam": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ids",
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "punt_clearances",
+    "id": "PuntClearances",
+    "method": "POST",
+    "path": "/clearances/punt.json",
+    "description": "Clear the Screener — every pending sender is punted and reexamined on their next email",
+    "readonly": false,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "update_clearance",
+    "id": "UpdateClearance",
+    "method": "PATCH",
+    "path": "/clearances/{clearanceId}",
+    "description": "Screen a sender in or out of the Screener\n\ndesignation_box_id files everything they send into that box instead of the Imbox.\nspam marks what is already waiting as spam and trains the filter on it.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "clearanceId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {status: \"approved\"|\"denied\"} — top level, not nested under a clearance key.",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "designation_box_id": {
+          "type": "integer"
+        },
+        "spam": {
+          "type": "boolean"
+        },
+        "mark_topics_as_seen": {
+          "type": "boolean"
+        },
+        "clearanceId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "clearanceId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "list_contacts",
+    "id": "ListContacts",
+    "method": "GET",
+    "path": "/contacts.json",
+    "description": "List contacts",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      },
+      {
+        "name": "q",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        },
+        "q": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "create_contact",
+    "id": "CreateContact",
+    "method": "POST",
+    "path": "/contacts.json",
+    "description": "Add a contact. Answers the contact that was created.",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {acting_user_id, contact: {...}} — creating also has to say which account\nthe contact belongs to, since one identity can hold several.",
+      "properties": {
+        "acting_user_id": {
+          "type": "integer",
+          "description": "The identity's user on the account the contact should be filed under; Identity's\nall_users carries one per account. Left out, HEY files it under the first account."
+        },
+        "contact": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email_address": {
+              "type": "string"
+            },
+            "alias_email_addresses": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Sending the list replaces it: an address left out stops being an alias."
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "contact"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "hide_contact",
+    "id": "HideContact",
+    "method": "DELETE",
+    "path": "/contacts/{contactId}",
+    "description": "Hide a contact. Nothing is deleted — RevealContact brings them back.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "get_contact",
+    "id": "GetContact",
+    "method": "GET",
+    "path": "/contacts/{contactId}",
+    "description": "Get a contact, with a page of the threads they are on",
+    "readonly": true,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "update_contact",
+    "id": "UpdateContact",
+    "method": "PATCH",
+    "path": "/contacts/{contactId}",
+    "description": "Edit a contact. HEY rewrites the whole contact, so send every field: a name,\naddress or alias left out is cleared. Answers the contact, which is not always\nthe one addressed — promoting an alias makes the alias primary.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {contact: {name, email_address, alias_email_addresses: [...]}}",
+      "properties": {
+        "contact": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email_address": {
+              "type": "string"
+            },
+            "alias_email_addresses": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Sending the list replaces it: an address left out stops being an alias."
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "contact",
+        "contactId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "unbundle_contact",
+    "id": "UnbundleContact",
+    "method": "DELETE",
+    "path": "/contacts/{contactId}/bundle.json",
+    "description": "Stop bundling a contact's mail",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "bundle_contact",
+    "id": "BundleContact",
+    "method": "POST",
+    "path": "/contacts/{contactId}/bundle.json",
+    "description": "Bundle a contact so their mail arrives grouped",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "update_contact_clearance",
+    "id": "UpdateContactClearance",
+    "method": "PATCH",
+    "path": "/contacts/{contactId}/clearance.json",
+    "description": "Screen a contact in or out. Status is \"approved\" or \"denied\".",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {status: \"approved\"|\"denied\"} — top level, not nested under a clearance key.",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "contactId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "delete_contact_note",
+    "id": "DeleteContactNote",
+    "method": "DELETE",
+    "path": "/contacts/{contactId}/note.json",
+    "description": "Clear the private note on a contact",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "get_contact_note",
+    "id": "GetContactNote",
+    "method": "GET",
+    "path": "/contacts/{contactId}/note.json",
+    "description": "Read the private note kept on a contact",
+    "readonly": true,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "update_contact_note",
+    "id": "UpdateContactNote",
+    "method": "PATCH",
+    "path": "/contacts/{contactId}/note.json",
+    "description": "Write the private note on a contact, replacing whatever was there",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {contact: {note: \"...\"}}",
+      "properties": {
+        "contact": {
+          "type": "object",
+          "properties": {
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "note"
+          ],
+          "additionalProperties": false
+        },
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "contact",
+        "contactId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "reveal_contact",
+    "id": "RevealContact",
+    "method": "POST",
+    "path": "/contacts/{contactId}/reveal.json",
+    "description": "Put a hidden contact back in the contact list",
+    "readonly": false,
+    "params": [
+      {
+        "name": "contactId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "contactId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "list_drafts",
+    "id": "ListDrafts",
+    "method": "GET",
+    "path": "/entries/drafts.json",
+    "description": "List draft messages",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "delete_draft",
+    "id": "DeleteDraft",
+    "method": "DELETE",
+    "path": "/entries/drafts/{entryId}",
+    "description": "Trash a draft (Entries::DraftsController#destroy). The id is the draft's entry id,\nas ListDrafts reports it.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "entryId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "entryId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "entryId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "new_entry_forward",
+    "id": "NewEntryForward",
+    "method": "GET",
+    "path": "/entries/{entryId}/forwards/new.json",
+    "description": "Get a prefilled forward of an entry: subject, quoted body and blank recipients.\nSend it with CreateMessage once the recipients are filled in.",
+    "readonly": true,
+    "params": [
+      {
+        "name": "entryId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "entryId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "entryId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "create_reply",
+    "id": "CreateReply",
+    "method": "POST",
+    "path": "/entries/{entryId}/replies.json",
+    "description": "Reply to an entry",
+    "readonly": false,
+    "params": [
+      {
+        "name": "entryId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {acting_sender_id, message: {subject, content}, entry: {addressed: {directly: [...]}}}\nentry.addressed is optional on the wire but a reply posted without it is saved as a\ndraft rather than delivered — HEY does not reply-all for the caller. Resolve the\nthread's recipients first and always send them.",
+      "properties": {
+        "acting_sender_id": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "object",
+          "description": "HEY does not derive a subject for a reply: a reply draft saved without message.subject\nreads \"No subject\" in Drafts. NewEntryReply hands back the prefilled subject (\"Re: …\") —\nsend it here. Content is the caller's reply body alone: the server appends the quoted\noriginal at delivery (auto_quoting defaults on), so the prefill's quoted content must\nnot be echoed back.",
+          "properties": {
+            "subject": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "content"
+          ],
+          "additionalProperties": false
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "addressed": {
+              "type": "object",
+              "description": "Recipients per kind, each a list of email addresses.\nhaystack applies Array() to each kind, so a JSON array is the correct wire format\n(a bare string would be treated as a single address, not split on commas).",
+              "properties": {
+                "directly": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "copied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "blindcopied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "status": {
+              "type": "string",
+              "description": "\"drafted\" saves the entry as a draft instead of delivering it. Any other value\n(or omitting it) delivers through the undo-delay window."
+            },
+            "scheduled_delivery": {
+              "type": "string",
+              "description": "\"true\" schedules delivery for the date and hour below; the entry stays drafted\nwith a scheduled_delivery_at until then. On an update, omitting it clears an\nexisting scheduled delivery."
+            },
+            "scheduled_delivery_at_date": {
+              "type": "string",
+              "description": "The delivery date: YYYY-MM-DD, \"today\" or \"tomorrow\", read in the identity's\ntime zone."
+            },
+            "scheduled_delivery_at_hour": {
+              "type": "string",
+              "description": "The delivery hour, \"0\" through \"23\" — a string so that midnight survives\nomitempty. HEY schedules to the hour."
+            }
+          },
+          "additionalProperties": false
+        },
+        "entryId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "acting_sender_id",
+        "message",
+        "entryId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "new_entry_reply",
+    "id": "NewEntryReply",
+    "method": "GET",
+    "path": "/entries/{entryId}/replies/new.json",
+    "description": "Get a prefilled reply to an entry: the quoted body and, in addressed, the\nparticipating contacts a reply goes to as HEY computes them — the sender moved onto\nthe To line and the acting user's own addresses, aliases and catch-alls excluded.",
+    "readonly": true,
+    "params": [
+      {
+        "name": "entryId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "entryId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "entryId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "mark_entry_spam",
+    "id": "MarkEntrySpam",
+    "method": "PUT",
+    "path": "/entries/{entryId}/status/spam.json",
+    "description": "Mark an entry as spam. Denies the sender when every thread from them is already spam.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "entryId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "entryId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "entryId"
+      ]
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_feedbox",
+    "id": "GetFeedbox",
+    "method": "GET",
+    "path": "/feedbox.json",
+    "description": "Get the Feed",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "identity",
+    "action": "get_identity",
+    "id": "GetIdentity",
+    "method": "GET",
+    "path": "/identity.json",
+    "description": "Get the current identity (authenticated user profile)",
+    "readonly": true,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "identity",
+    "action": "update_time_format",
+    "id": "UpdateTimeFormat",
+    "method": "PUT",
+    "path": "/identity/time_format",
+    "description": "Set whether HEY renders times on a 12-hour or a 24-hour clock. Answers the\nstored preference. The parameter is the web toggle's, said honestly: true\nfor the 24-hour clock, false for the 12-hour one.",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "twenty_four_hour_time_format": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "twenty_four_hour_time_format"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_imbox",
+    "id": "GetImbox",
+    "method": "GET",
+    "path": "/imbox.json",
+    "description": "Get the Imbox",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_imbox_seen",
+    "id": "GetImboxSeen",
+    "method": "GET",
+    "path": "/imbox/seen.json",
+    "description": "Get the Imbox's Previously Seen postings",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "create_message",
+    "id": "CreateMessage",
+    "method": "POST",
+    "path": "/messages.json",
+    "description": "Create a new message (start a new topic).\nThe acting sender ID must be included; the Go SDK resolves this automatically.\nEvery message is created drafted on HEY's side; without entry.status the server\ndelivers it, while entry.status \"drafted\" leaves it as a draft and answers\n204 with a Location header naming /messages/{entry_id}.",
+    "readonly": false,
+    "params": [],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {acting_sender_id, message: {subject, content}, entry: {addressed: {directly: \"...\"}}}",
+      "properties": {
+        "acting_sender_id": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "content",
+            "subject"
+          ],
+          "additionalProperties": false
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "addressed": {
+              "type": "object",
+              "description": "Recipients per kind, each a list of email addresses.\nhaystack applies Array() to each kind, so a JSON array is the correct wire format\n(a bare string would be treated as a single address, not split on commas).",
+              "properties": {
+                "directly": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "copied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "blindcopied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "status": {
+              "type": "string",
+              "description": "\"drafted\" saves the entry as a draft instead of delivering it. Any other value\n(or omitting it) delivers through the undo-delay window."
+            },
+            "scheduled_delivery": {
+              "type": "string",
+              "description": "\"true\" schedules delivery for the date and hour below; the entry stays drafted\nwith a scheduled_delivery_at until then. On an update, omitting it clears an\nexisting scheduled delivery."
+            },
+            "scheduled_delivery_at_date": {
+              "type": "string",
+              "description": "The delivery date: YYYY-MM-DD, \"today\" or \"tomorrow\", read in the identity's\ntime zone."
+            },
+            "scheduled_delivery_at_hour": {
+              "type": "string",
+              "description": "The delivery hour, \"0\" through \"23\" — a string so that midnight survives\nomitempty. HEY schedules to the hour."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "acting_sender_id",
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_message",
+    "id": "GetMessage",
+    "method": "GET",
+    "path": "/messages/{messageId}",
+    "description": "Get a message",
+    "readonly": true,
+    "params": [
+      {
+        "name": "messageId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "messageId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "update_message",
+    "id": "UpdateMessage",
+    "method": "PUT",
+    "path": "/messages/{messageId}",
+    "description": "Revise a message entry (MessagesController#update). With entry.status \"drafted\" the\nentry is saved as a draft (204 + Location, like CreateMessage); without it a draft is\ndelivered through the undo-delay window. A trashed draft is silently restored first.\nThe revision is not a patch: subject, content and any scheduled delivery are rewritten\nfrom this request (an omitted scheduled delivery clears one), while recipients are\nreplaced only when entry.addressed is present.\n\nNot naturally idempotent despite the PUT: without the drafted status this request\n*delivers*, so a transparent retry after an ambiguous first attempt could send the\nmessage again. The client must not retry it.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "messageId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "description": "Wire format: {acting_sender_id, message: {subject, content}, entry: {addressed: {directly: \"...\"}}}",
+      "properties": {
+        "acting_sender_id": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "content",
+            "subject"
+          ],
+          "additionalProperties": false
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "addressed": {
+              "type": "object",
+              "description": "Recipients per kind, each a list of email addresses.\nhaystack applies Array() to each kind, so a JSON array is the correct wire format\n(a bare string would be treated as a single address, not split on commas).",
+              "properties": {
+                "directly": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "copied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "blindcopied": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "status": {
+              "type": "string",
+              "description": "\"drafted\" saves the entry as a draft instead of delivering it. Any other value\n(or omitting it) delivers through the undo-delay window."
+            },
+            "scheduled_delivery": {
+              "type": "string",
+              "description": "\"true\" schedules delivery for the date and hour below; the entry stays drafted\nwith a scheduled_delivery_at until then. On an update, omitting it clears an\nexisting scheduled delivery."
+            },
+            "scheduled_delivery_at_date": {
+              "type": "string",
+              "description": "The delivery date: YYYY-MM-DD, \"today\" or \"tomorrow\", read in the identity's\ntime zone."
+            },
+            "scheduled_delivery_at_hour": {
+              "type": "string",
+              "description": "The delivery hour, \"0\" through \"23\" — a string so that midnight survives\nomitempty. HEY schedules to the hour."
+            }
+          },
+          "additionalProperties": false
+        },
+        "messageId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "acting_sender_id",
+        "message",
+        "messageId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_message_edit",
+    "id": "GetMessageEdit",
+    "method": "GET",
+    "path": "/messages/{messageId}/edit.json",
+    "description": "A draft's editable state: content, recipients and scheduled delivery as the\ncomposer would load them (GET /messages/{id}/edit).",
+    "readonly": true,
+    "params": [
+      {
+        "name": "messageId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "messageId"
+      ]
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "get_my_clearances",
+    "id": "GetMyClearances",
+    "method": "GET",
+    "path": "/my/clearances.json",
+    "description": "The senders already screened in or out",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "contacts",
+    "action": "update_my_clearance",
+    "id": "UpdateMyClearance",
+    "method": "PATCH",
+    "path": "/my/clearances/{clearanceId}",
+    "description": "Rescreen a sender who was already screened in or out",
+    "readonly": false,
+    "params": [
+      {
+        "name": "clearanceId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "clearanceId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "clearanceId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "identity",
+    "action": "get_navigation",
+    "id": "GetNavigation",
+    "method": "GET",
+    "path": "/my/navigation.json",
+    "description": "Get navigation items",
+    "readonly": true,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_trailbox",
+    "id": "GetTrailbox",
+    "method": "GET",
+    "path": "/paper_trail.json",
+    "description": "Get the Paper Trail",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_laterbox",
+    "id": "GetLaterbox",
+    "method": "GET",
+    "path": "/reply_later.json",
+    "description": "Get the Reply Later box",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "boxes",
+    "action": "get_asidebox",
+    "id": "GetAsidebox",
+    "method": "GET",
+    "path": "/set_aside.json",
+    "description": "Get the Set Aside box",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_everything_topics",
+    "id": "GetEverythingTopics",
+    "method": "GET",
+    "path": "/topics/everything.json",
+    "description": "Get all topics (everything view)",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_sent_topics",
+    "id": "GetSentTopics",
+    "method": "GET",
+    "path": "/topics/sent.json",
+    "description": "Get sent topics",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_spam_topics",
+    "id": "GetSpamTopics",
+    "method": "GET",
+    "path": "/topics/spam.json",
+    "description": "Get spam topics",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "empty_spam",
+    "id": "EmptySpam",
+    "method": "DELETE",
+    "path": "/topics/spam/all.json",
+    "description": "Empty the spam box. Runs synchronously, so it can take a while on a large mailbox.",
+    "readonly": false,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_trash_topics",
+    "id": "GetTrashTopics",
+    "method": "GET",
+    "path": "/topics/trash.json",
+    "description": "Get trash topics",
+    "readonly": true,
+    "params": [
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "empty_trash",
+    "id": "EmptyTrash",
+    "method": "DELETE",
+    "path": "/topics/trash/all.json",
+    "description": "Empty the trash. Runs synchronously, so it can take a while on a large mailbox.",
+    "readonly": false,
+    "params": [],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "required": []
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_topic",
+    "id": "GetTopic",
+    "method": "GET",
+    "path": "/topics/{topicId}",
+    "description": "Get a topic",
+    "readonly": true,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "topicId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "topicId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "get_topic_entries",
+    "id": "GetTopicEntries",
+    "method": "GET",
+    "path": "/topics/{topicId}/entries",
+    "description": "Get entries for a topic",
+    "readonly": true,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      },
+      {
+        "name": "page",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "topicId": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "topicId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "move_topic",
+    "id": "MoveTopic",
+    "method": "POST",
+    "path": "/topics/{topicId}/moves.json",
+    "description": "Move a topic to another box.\n\nAnswers 204 without moving anything when the acting user has no posting for the topic.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      }
+    ],
+    "hasBody": true,
+    "input": {
+      "type": "object",
+      "properties": {
+        "box_id": {
+          "type": "integer"
+        },
+        "topicId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "box_id",
+        "topicId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "restore_topic",
+    "id": "RestoreTopic",
+    "method": "PUT",
+    "path": "/topics/{topicId}/status/active.json",
+    "description": "Restore a topic from the trash or the catch-all",
+    "readonly": false,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "topicId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "topicId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "mark_topic_ham",
+    "id": "MarkTopicHam",
+    "method": "PUT",
+    "path": "/topics/{topicId}/status/ham.json",
+    "description": "Mark a spam topic as ham. Every other spam topic from the same sender is hammed too.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "topicId": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "topicId"
+      ]
+    }
+  },
+  {
+    "domain": "threads",
+    "action": "trash_topic",
+    "id": "TrashTopic",
+    "method": "PUT",
+    "path": "/topics/{topicId}/status/trashed.json",
+    "description": "Trash a topic.\n\nA shared topic redirects to the removal confirmation page unless confirm_destroy is set,\nso always pass it when trashing something that might be shared.",
+    "readonly": false,
+    "params": [
+      {
+        "name": "topicId",
+        "in": "path"
+      },
+      {
+        "name": "confirm_destroy",
+        "in": "query"
+      }
+    ],
+    "hasBody": false,
+    "input": {
+      "type": "object",
+      "properties": {
+        "topicId": {
+          "type": "integer"
+        },
+        "confirm_destroy": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "topicId"
+      ]
+    }
+  }
+]

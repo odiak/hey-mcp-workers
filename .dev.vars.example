@@ -1,0 +1,3 @@
+# Generate two independent values; do not use these placeholders.
+ENCRYPTION_KEY="BASE64_ENCODED_32_RANDOM_BYTES"
+ADMIN_SECRET="ANOTHER_RANDOM_SECRET_AT_LEAST_32_CHARACTERS"

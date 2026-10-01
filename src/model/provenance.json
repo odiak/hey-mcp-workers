@@ -1,0 +1,41 @@
+{
+  "cli": "https://github.com/basecamp/hey-cli",
+  "cliCommit": "b37769dc52c4286f2a6bbc3486fb65b5a23e25de",
+  "upstream": {
+    "source": "github.com/basecamp/hey-sdk",
+    "commit": "41585abf862677fd40375c23cd858cc6eeac8a02",
+    "ref": "go/v0.31.1",
+    "files": [
+      "behavior-model.json",
+      "openapi.json"
+    ],
+    "synced_by": "scripts/sync-mcp-model.sh"
+  },
+  "generatedBy": "scripts/sync-model.mjs",
+  "domains": {
+    "boxes": [
+      "Boxes"
+    ],
+    "search": [
+      "Search"
+    ],
+    "threads": [
+      "Topics",
+      "Entries",
+      "Messages"
+    ],
+    "contacts": [
+      "Contacts"
+    ],
+    "todos": [
+      "Calendar Todos"
+    ],
+    "calendar": [
+      "Calendars"
+    ],
+    "identity": [
+      "Identity"
+    ]
+  },
+  "operations": 71
+}

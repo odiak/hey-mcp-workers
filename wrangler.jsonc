@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hey-mcp-workers",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": { "PUBLIC_ORIGIN": "http://localhost:8787" },
+  "secrets": { "required": ["ENCRYPTION_KEY", "ADMIN_SECRET"] },
+  "kv_namespaces": [{ "binding": "OAUTH_KV" }],
+  "durable_objects": {
+    "bindings": [{ "name": "OWNER", "class_name": "Owner" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Owner"] }],
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true,
+    "logs": { "enabled": true, "invocation_logs": false },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 }
+  }
+}
