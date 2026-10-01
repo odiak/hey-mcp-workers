@@ -36,7 +36,7 @@ export class RefreshError extends Error {
 
 export async function refreshCredentials(current: Credentials): Promise<Credentials> {
   const response = await fetch(tokenEndpoint, {
-    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(15_000),
+    method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(15_000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': userAgent },
     body: new URLSearchParams({
       grant_type: 'refresh_token', client_id: clientId,
@@ -69,7 +69,7 @@ export async function heyRequest(token: string, method: string, path: string, bo
   const url = new URL(path, heyOrigin);
   if (url.origin !== heyOrigin) throw new HttpError(400, '接続先が不正です。');
   return fetch(url, {
-    method, redirect: 'error', signal: AbortSignal.timeout(20_000),
+    method, redirect: 'manual', signal: AbortSignal.timeout(20_000),
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': userAgent },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
