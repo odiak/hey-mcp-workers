@@ -46,8 +46,10 @@ XDG_CONFIG_HOME="$HOME/.config/hey-mcp-bootstrap" \
 
 ## Cloudflareへデプロイする
 
+このリポジトリには作者のデプロイ設定が含まれています。自分用にデプロイする場合は、ローカルにcloneするか、forkしたリポジトリをcloneしてください。デプロイ前に、以下の手順で`wrangler.jsonc`のWorker名・KV namespace ID・必要なカスタムドメイン設定を自分の環境に合わせて変更します。
+
 1. 対象CloudflareアカウントとWorker名を確認します。公開URLはリクエストURLから取得するため、originの環境変数は不要です。カスタムドメインなら`wrangler.jsonc`に対応する`routes`を設定します。
-2. `OAUTH_KV`のnamespace IDを確認します。既存KVを使う場合は、そのIDを設定してください。新規デプロイでは既存のIDを削除すると、Wranglerが自分のアカウントにnamespaceを作成できます。
+2. リポジトリに含まれる`OAUTH_KV`のnamespace IDは、自分のアカウントにあるnamespaceのIDへ置き換えてください。新規デプロイでは既存のIDを削除すると、Wranglerが自分のアカウントにnamespaceを作成できます。
 3. 本番専用のsecretを生成して登録し、デプロイします。
 
 ```sh

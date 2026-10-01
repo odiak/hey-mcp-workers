@@ -46,8 +46,10 @@ Do not use this directory for regular local CLI operations after uploading. Refr
 
 ## Deploy to Cloudflare
 
+This repository includes the author's deployment settings. To deploy your own instance, clone the repository locally, or fork it and clone your fork. Before deploying, follow the steps below to adapt the Worker name, KV namespace ID, and any custom domain settings in `wrangler.jsonc` to your own environment.
+
 1. Check the target Cloudflare account and Worker name. The server derives its public URLs from the incoming request URL, so no public-origin variable is needed. For a custom domain, configure the corresponding `routes` in `wrangler.jsonc`.
-2. Check the `OAUTH_KV` namespace ID. To use an existing KV namespace, set its ID. For a new deployment, remove the existing ID so Wrangler can create a namespace in your account.
+2. Replace the `OAUTH_KV` namespace ID included in this repository with the ID of a namespace in your own account. For a new deployment, remove the existing ID so Wrangler can create a namespace in your account.
 3. Generate and register separate production secrets, then deploy.
 
 ```sh
