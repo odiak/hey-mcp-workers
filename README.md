@@ -2,7 +2,7 @@
 
 English | [日本語](README.ja.md)
 
-A personal, single-user server that connects your HEY account to MCP clients through OAuth. Publishing the source code does not grant access to your deployment. Only connections approved by the owner using the admin secret can access the account.
+A personal, single-user server that connects your HEY account to MCP clients through OAuth. To use it, deploy your own instance to Cloudflare Workers in your Cloudflare account. Only connections approved by the owner using the admin secret can access the account.
 
 ## Architecture
 
