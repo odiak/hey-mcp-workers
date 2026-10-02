@@ -27,12 +27,15 @@ export function unwrap(result: Outcome): unknown {
 
 export class Owner extends DurableObject<CloudflareEnv> {
   private tail: Promise<unknown> = Promise.resolve();
+  private pendingExecutions = 0;
+  private deletingCredentials = false;
 
   constructor(ctx: DurableObjectState, env: CloudflareEnv) {
     super(ctx, env);
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS connections (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS sessions (hash TEXT PRIMARY KEY, csrf TEXT NOT NULL, expires INTEGER NOT NULL, secret_hash TEXT NOT NULL)`);
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL, resets INTEGER NOT NULL)`);
+    ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS refresh_tokens (token_hash TEXT PRIMARY KEY, connection_id TEXT NOT NULL, expires INTEGER NOT NULL)`);
   }
 
   private serial<T>(work: () => Promise<T>): Promise<T> {
@@ -113,11 +116,17 @@ export class Owner extends DurableObject<CloudflareEnv> {
   }
 
   async deleteCredentials(): Promise<void> {
-    return this.serial(async () => {
-      await this.ctx.storage.delete(['credentials', 'credential-state']);
+    if (this.deletingCredentials) throw new HttpError(409, '認証情報を削除しています。');
+    this.deletingCredentials = true;
+    try {
       const rows = await this.connections();
       for (const row of rows) this.writeConnection({ ...row, revokedAt: row.revokedAt ?? Date.now() });
-    });
+      await this.serial(async () => {
+        await this.ctx.storage.delete(['credentials', 'credential-state']);
+      });
+    } finally {
+      this.deletingCredentials = false;
+    }
   }
 
   async connections(): Promise<Connection[]> {
@@ -132,7 +141,7 @@ export class Owner extends DurableObject<CloudflareEnv> {
   async createConnection(clientId: string, name: string, redirectUri: string, approved: string[]): Promise<string> {
     if (!approved.includes('hey:read') || approved.some(s => !scopes.includes(s)) || (approved.includes('hey:send') && !approved.includes('hey:write'))) throw new HttpError(400, '権限の組み合わせが不正です。');
     const state = await this.status();
-    if (!state.configured || state.reauthRequired) throw new HttpError(409, '先にHEYの認証情報を登録してください。');
+    if (this.deletingCredentials || !state.configured || state.reauthRequired) throw new HttpError(409, '先にHEYの認証情報を登録してください。');
     const id = crypto.randomUUID();
     this.writeConnection({ id, clientId, name, redirectUri, scopes: approved, createdAt: Date.now(),
       expiresAt: Date.now() + 30 * 86400_000, revokedAt: null, lastUsedAt: null });
@@ -140,6 +149,11 @@ export class Owner extends DurableObject<CloudflareEnv> {
   }
 
   async activeConnection(id: string): Promise<Connection | null> {
+    return this.getActiveConnection(id);
+  }
+
+  private getActiveConnection(id: string): Connection | null {
+    if (this.deletingCredentials) return null;
     const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM connections WHERE id = ?', id).toArray()[0];
     if (!row) return null;
     const value = JSON.parse(row.data) as Connection;
@@ -150,6 +164,31 @@ export class Owner extends DurableObject<CloudflareEnv> {
     const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM connections WHERE id = ?', id).toArray()[0];
     if (!row) throw new HttpError(404, '連携が見つかりません。');
     this.writeConnection({ ...JSON.parse(row.data) as Connection, revokedAt: Date.now() });
+  }
+
+  async consumeRefreshToken(id: string, tokenHash: string, reused: boolean): Promise<boolean> {
+    const connection = this.getActiveConnection(id);
+    if (!connection) return false;
+    const now = Date.now();
+    this.ctx.storage.sql.exec('DELETE FROM refresh_tokens WHERE expires <= ?', now);
+    const used = this.ctx.storage.sql.exec('SELECT token_hash FROM refresh_tokens WHERE token_hash = ?', tokenHash).toArray().length > 0;
+    if (reused || used) {
+      this.writeConnection({ ...connection, revokedAt: now });
+      return false;
+    }
+    this.ctx.storage.sql.exec('INSERT INTO refresh_tokens VALUES (?, ?, ?)', tokenHash, id, connection.expiresAt);
+    return true;
+  }
+
+  async rejectRefreshTokenReuse(clientId: string, tokenHash: string): Promise<boolean> {
+    const row = this.ctx.storage.sql.exec<{ data: string }>(
+      'SELECT connections.data FROM refresh_tokens JOIN connections ON connections.id = refresh_tokens.connection_id WHERE token_hash = ?', tokenHash,
+    ).toArray()[0];
+    if (!row) return false;
+    const connection = JSON.parse(row.data) as Connection;
+    if (connection.clientId !== clientId) return false;
+    this.writeConnection({ ...connection, revokedAt: connection.revokedAt ?? Date.now() });
+    return true;
   }
 
   private async credentials(): Promise<Credentials> {
@@ -183,19 +222,22 @@ export class Owner extends DurableObject<CloudflareEnv> {
     }
   }
 
-  private async call(domain: string, action: string, params: Record<string, unknown>, accountId?: number) {
+  private async call(domain: string, action: string, params: Record<string, unknown>, accountId?: number, connectionId?: string) {
     const op = getOperation(domain, action);
     const { path, body } = buildRequest(op, params, accountId);
     let value = await this.credentials();
     if (value.credentials.expires_at > 0 && value.credentials.expires_at <= Date.now() / 1000 + 60) value = await this.refresh(value);
-    let response: Response;
-    try { response = await heyRequest(value.credentials.access_token, op.method, path, body); }
-    catch { throw new HttpError(502, 'HEYへの通信に失敗しました。書き込みの成否を確認してから再実行してください。'); }
+    const request = async () => {
+      if (connectionId !== undefined && !this.getActiveConnection(connectionId)) throw new HttpError(401, 'この連携は無効です。');
+      try { return await heyRequest(value.credentials.access_token, op.method, path, body); }
+      catch { throw new HttpError(502, 'HEYへの通信に失敗しました。書き込みの成否を確認してから再実行してください。'); }
+    };
+    let response = await request();
     if (response.status === 401) {
       await response.body?.cancel();
       value = await this.refresh(value);
       if (!op.readonly) throw new HttpError(502, 'HEYの認証情報を更新しました。書き込みは再送していません。成否を確認してから再実行してください。');
-      response = await heyRequest(value.credentials.access_token, op.method, path, body);
+      response = await request();
     }
     return heyResult(response);
   }
@@ -210,16 +252,22 @@ export class Owner extends DurableObject<CloudflareEnv> {
   }
 
   async execute(id: string, tokenScopes: string[], domain: string, action: string, params: Record<string, unknown>, accountId?: number): Promise<Record<string, unknown>> {
-    return this.serial(async () => {
-      const connection = await this.activeConnection(id);
-      if (!connection) throw new HttpError(401, 'この連携は無効です。');
-      const required = requiredScopes(getOperation(domain, action), params);
-      if (!required.every(s => connection.scopes.includes(s) && tokenScopes.includes(s))) throw new HttpError(403, 'この操作の権限がありません。送信・予約送信にはhey:sendが必要です。');
-      const result = await this.call(domain, action, params, accountId);
-      // Revocation may have happened while the upstream request was in flight.
-      const latest = await this.activeConnection(id);
-      if (latest) this.writeConnection({ ...latest, lastUsedAt: Date.now() });
-      return result;
-    });
+    if (this.pendingExecutions >= 8) throw new HttpError(429, '操作が混み合っています。しばらくして再試行してください。');
+    this.pendingExecutions++;
+    try {
+      return await this.serial(async () => {
+        const connection = await this.activeConnection(id);
+        if (!connection) throw new HttpError(401, 'この連携は無効です。');
+        const required = requiredScopes(getOperation(domain, action), params);
+        if (!required.every(s => connection.scopes.includes(s) && tokenScopes.includes(s))) throw new HttpError(403, 'この操作の権限がありません。送信・予約送信にはhey:sendが必要です。');
+        const result = await this.call(domain, action, params, accountId, id);
+        // Revocation may have happened while the upstream request was in flight.
+        const latest = await this.activeConnection(id);
+        if (latest) this.writeConnection({ ...latest, lastUsedAt: Date.now() });
+        return result;
+      });
+    } finally {
+      this.pendingExecutions--;
+    }
   }
 }

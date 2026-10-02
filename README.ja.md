@@ -73,7 +73,7 @@ npm run deploy
 | `hey:write` | 下書きの保存、メールの整理、連絡先やTodoなどの変更。読み取りも必要。 |
 | `hey:send` | メールの送信・予約送信。書き込みも必要。 |
 
-access tokenは15分、refresh tokenは30日です。MCP用refresh tokenは更新時にローテーションします。30日経った連携は再承認してください。同じクライアントから再承認しても、以前の連携は自動で取り消しません。一覧で個別に無効化できます。
+access tokenは15分、refresh tokenは30日です。MCP用refresh tokenは更新時にローテーションします。使用済みのrefresh tokenを再利用すると、その連携を無効化します。同じtokenの同時更新も再利用として扱うため、クライアントは更新を直列化してください。更新処理中の障害で応答を受け取れず、同じtokenで再試行した場合も再承認が必要になることがあります。30日経った連携は再承認してください。同じクライアントから再承認しても、以前の連携は自動で取り消しません。一覧で個別に無効化できます。
 
 連携の無効化は新しいMCP操作とMCPトークン発行・更新に効きます。OAuth KVに古い記録が残っていても、Durable Objectの失効状態で拒否します。すでにHEYへ送信済みのリクエストは取り消せません。管理画面の「認証情報と全連携を無効にする」は、Workerの保存データを削除して連携を無効化します。HEY側のデバイスセッションを取り消す操作ではありません。
 
@@ -107,11 +107,11 @@ access tokenは15分、refresh tokenは30日です。MCP用refresh tokenは更�
 
 - AES-GCMは保存データ単独の流出への対策です。Workerの実行権限・デプロイ権限を奪われた場合には復号され得ます。
 - 管理セッションはランダムなtokenを使い、保存先にはそのSHA-256ハッシュだけを置きます。cookieはSecure/HttpOnly/SameSite=Strict、有効期限1時間。変更操作はOriginとCSRF tokenを検証します。
-- 管理ログインはIPごとに10回/10分、動的クライアント登録は30回/1時間に制限します。公開DCR endpointはクライアント登録だけで、HEYへのアクセスは所有者の承認までできません。
+- 管理ログインはIPごとに10回/10分、動的クライアント登録は30回/1時間に制限します。MCP操作の実行・待機は全連携で合計8件までとし、超過時は429で拒否します。全停止では待機中の操作より先に連携を失効させます。公開DCR endpointはクライアント登録だけで、HEYへのアクセスは所有者の承認までできません。
 - OAuthのclient metadataは信用せずHTML escapeし、外部のロゴ・スクリプトを読み込みません。承認画面はブラウザにひも付く一度限りのhandleを使います。
 - HEYへの接続先とrefresh endpointは固定。アップロードされた任意のURLや、APIのリダイレクトへ認証情報を送信しません。
 - 読み取り専用はツール一覧・MCPの実行・Durable Objectの実行の各段階で確認します。メール本文は外部から届くデータなので、AIへの指示として信用しないでください。
-- 自前のログにはイベント名・HTTP status等だけを記録します。認証情報、token、本文、client metadata、完全なrequest URLは記録しません。Cloudflareのログ・traceではquery stringを除去し、invocation logは無効化しています。
+- 自前のログにはイベント名・HTTP status等を記録します。CIMD取得失敗時は、ドメインと通常のパスを残し、queryの値・パス内のUUIDや長いランダム文字列を`***`にした識別URLを記録します。パスのマスクはヒューリスティックです。本文、未加工のclient metadata・request URLや取得先のエラー詳細は記録しません。Cloudflareのログ・traceではquery stringを除去し、invocation logは無効化しています。
 
 ## 開発・検証
 
@@ -123,6 +123,8 @@ npm run build
 ```
 
 テストはCloudflareのWorkers runtime上で実行します。実際のHEYの認証情報を使わず、暗号化、入力検証、権限、CSRF、PKCE、OAuthのコード交換・更新・失効、HEYの更新競合とエラー処理を検証します。`build`はdry-runであり、本番デプロイではありません。
+
+OAuthライブラリは1.2.1に固定し、`patches/`のセキュリティ修正を`npm install` / `npm ci`のpostinstallで適用します。インストール時のscriptsを無効化しないでください。パッチの内容・更新時の注意点は[patches/README.md](patches/README.md)を参照してください。
 
 APIモデルを更新するときは、HEY CLIのcheckoutを指定します。
 

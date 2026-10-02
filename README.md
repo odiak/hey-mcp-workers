@@ -73,7 +73,7 @@ Register `https://<your-worker-host>/mcp` in your client. Use the same host thro
 | `hey:write` | Save drafts, organize emails, and modify contacts, todos, and other data. Requires read access as well. |
 | `hey:send` | Send and schedule emails. Requires write access as well. |
 
-Access tokens last 15 minutes, and refresh tokens last 30 days. MCP refresh tokens rotate when used. Connections must be approved again after 30 days. Approving the same client again does not automatically revoke an earlier connection; you can revoke each one individually from the list.
+Access tokens last 15 minutes, and refresh tokens last 30 days. MCP refresh tokens rotate when used. Reusing a consumed refresh token revokes its connection. Simultaneous refreshes with the same token also count as reuse, so clients must serialize refreshes. If a refresh fails or its response is lost after the token was consumed, retrying with that token can also require reauthorization. Connections must be approved again after 30 days. Approving the same client again does not automatically revoke an earlier connection; you can revoke each one individually from the list.
 
 Revocation blocks new MCP operations and MCP token issuance or refreshes. Even if old records remain in OAuth KV, the Durable Object rejects the revoked connection. Requests already sent to HEY cannot be canceled. The admin action **「認証情報と全連携を無効にする」** (Disable credentials and all connections) deletes the Worker's stored credentials and revokes all connections. It does not revoke the device session on HEY itself.
 
@@ -107,11 +107,11 @@ Saving or updating a message without `hey:send` is allowed only when `entry.stat
 
 - AES-GCM protects against disclosure of stored data alone. An attacker with Worker execution or deployment access may still be able to decrypt it.
 - Admin sessions use random tokens, with only their SHA-256 hashes stored. Cookies use Secure/HttpOnly/SameSite=Strict and expire after one hour. State-changing requests validate both Origin and a CSRF token.
-- Admin login is limited to 10 attempts per IP per 10 minutes. Dynamic client registration is limited to 30 registrations per hour. The public DCR endpoint only registers clients; accessing HEY requires the owner's approval.
+- Admin login is limited to 10 attempts per IP per 10 minutes. Dynamic client registration is limited to 30 registrations per hour. MCP operations are limited to eight running or queued requests across all connections; excess requests receive 429. Disabling all connections revokes them before queued operations finish. The public DCR endpoint only registers clients; accessing HEY requires the owner's approval.
 - OAuth client metadata is treated as untrusted and HTML-escaped. External logos and scripts are not loaded. Consent uses a one-time handle bound to the browser.
 - HEY API and refresh endpoints are fixed. Credentials are never sent to arbitrary uploaded URLs or API redirect destinations.
 - Read-only permissions are checked when listing tools, executing MCP operations, and executing operations inside the Durable Object. Email content is external data and must not be trusted as instructions to an AI.
-- Application logs record only event names, HTTP status codes, and similar metadata. They do not record credentials, tokens, email content, client metadata, or complete request URLs. Cloudflare logs and traces redact query strings, and invocation logs are disabled.
+- Application logs record event names, HTTP status codes, and similar metadata. CIMD fetch failures retain the domain and ordinary path, replacing query values, UUIDs, and long random-looking path strings with `***`. Path masking is heuristic. Email content, raw client metadata or request URLs, and upstream error details are not logged. Cloudflare logs and traces redact query strings, and invocation logs are disabled.
 
 ## Development and verification
 
@@ -123,6 +123,8 @@ npm run build
 ```
 
 Tests run in Cloudflare's Workers runtime without real HEY credentials. They cover encryption, input validation, permissions, CSRF, PKCE, OAuth code exchange, refresh and revocation, and HEY refresh races and error handling. `build` is a dry run, not a production deployment.
+
+The OAuth library is pinned to 1.2.1. The security patch in `patches/` is applied by the postinstall script during `npm install` / `npm ci`. Do not disable installation scripts. See [patches/README.md](patches/README.md) for the patch details and upgrade requirements.
 
 To update the API model, specify a HEY CLI checkout:
 

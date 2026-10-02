@@ -1,10 +1,12 @@
 import { env, exports } from 'cloudflare:workers';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { randomToken, hash } from '../src/security';
 import { unwrap } from '../src/owner';
-import { authorizationServer } from '../src/oauth';
+import { authorizationServer, maskedClientIdUrl } from '../src/oauth';
 
 const origin = 'https://hey-mcp.example';
+let loginAttempt = 0;
+afterEach(() => vi.restoreAllMocks());
 const request = (path: string, init?: RequestInit, baseOrigin = origin) => {
   const headers = new Headers(init?.headers);
   headers.set('Host', new URL(baseOrigin).host);
@@ -22,7 +24,7 @@ function mergeCookies(...values: string[]): string {
   return [...merged.values()].join('; ');
 }
 async function login() {
-  const response = await request('/login', { method: 'POST', headers: { Origin: origin },
+  const response = await request('/login', { method: 'POST', headers: { Origin: origin, 'CF-Connecting-IP': `192.0.2.${++loginAttempt}` },
     body: new URLSearchParams({ secret: env.ADMIN_SECRET, next: '/admin' }) });
   expect(response.status).toBe(303);
   const cookie = cookies(response);
@@ -68,6 +70,10 @@ async function exchange(info: Awaited<ReturnType<typeof setup>>, code: string, v
   return request('/oauth/token', { method: 'POST', body: new URLSearchParams({ grant_type: 'authorization_code',
     client_id: info.clientId, code, redirect_uri: 'https://client.example/callback', code_verifier: verifier, resource: `${origin}/mcp` }) });
 }
+async function refresh(clientId: string, token: string) {
+  return request('/oauth/token', { method: 'POST', body: new URLSearchParams({ grant_type: 'refresh_token',
+    client_id: clientId, refresh_token: token, resource: `${origin}/mcp` }) });
+}
 async function mcp(token: string, method: string, params: Record<string, unknown> = {}) {
   const response = await request('/mcp', { method: 'POST', headers: {
     Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream',
@@ -80,6 +86,18 @@ async function mcp(token: string, method: string, params: Record<string, unknown
 }
 
 describe('HTTP and OAuth boundaries', () => {
+  it.each([
+    ['https://client.example/oauth/metadata.json', 'https://client.example/oauth/metadata.json'],
+    ['https://client.example/oauth/metadata.json?token=short&flag&token=second#hidden', 'https://client.example/oauth/metadata.json?token=***&flag=***&token=***'],
+    ['https://client.example/12345678-1234-4234-8234-123456789abc/metadata.json', 'https://client.example/***/metadata.json'],
+    ['https://client.example/client-12345678%2D1234%2D4234%2D8234%2D123456789abc.json', 'https://client.example/client-***.json'],
+    ['https://client.example/ab12cd34ef56ab78cd90ef12ab34cd56/metadata.json', 'https://client.example/***/metadata.json'],
+    ['https://client.example/aB9xK2mN7qR4sT6uV8wY1zC3/metadata.json', 'https://client.example/***/metadata.json'],
+    ['https://client.example/%61B9xK2mN7qR4sT6uV8wY1zC3/metadata.json', 'https://client.example/***/metadata.json'],
+    ['https://client.example/client-metadata-document-production.json?v=3', 'https://client.example/client-metadata-document-production.json?v=***'],
+  ])('masks client identifier %s', (input, expected) => {
+    expect(maskedClientIdUrl(input)).toBe(expected);
+  });
   it('protects management, denies CSRF, and does not accept an open login redirect', async () => {
     const admin = await login();
     expect((await request('/admin')).status).toBe(200);
@@ -195,6 +213,77 @@ describe('HTTP and OAuth boundaries', () => {
       expect(result.data.result, JSON.stringify(result.data)).toBeDefined();
       expect(result.data.result.isError).toBe(true);
       expect(JSON.stringify(result.data)).toContain('hey:send');
+    }
+  });
+  it('revokes the connection and all its tokens on refresh token replay', async () => {
+    const info = await setup();
+    const initial = await exchange(info, await approve(info));
+    const tokens = await initial.json() as { access_token: string; refresh_token: string };
+    const first = await refresh(info.clientId, tokens.refresh_token);
+    expect(first.status).toBe(200);
+    const rotated = await first.json() as { access_token: string; refresh_token: string };
+    const replay = await refresh(info.clientId, tokens.refresh_token);
+    expect(replay.status).toBe(400);
+    expect(await replay.json()).toMatchObject({ error: 'invalid_grant' });
+    expect((await refresh(info.clientId, rotated.refresh_token)).status).toBe(400);
+    expect((await refresh(info.clientId, tokens.refresh_token)).status).toBe(400);
+    for (const token of [tokens.access_token, rotated.access_token]) {
+      expect((await request('/mcp', { headers: { Authorization: `Bearer ${token}` } })).status).toBe(401);
+    }
+  });
+  it('does not revoke a connection for a guessed or wrong-client refresh token', async () => {
+    const info = await setup();
+    const initial = await exchange(info, await approve(info));
+    const tokens = await initial.json() as { refresh_token: string };
+    const parts = tokens.refresh_token.split(':');
+    parts[2] = randomToken();
+    expect((await refresh(info.clientId, parts.join(':'))).status).toBe(400);
+    expect((await refresh('unknown-client', tokens.refresh_token)).status).toBe(401);
+    expect((await refresh(info.clientId, tokens.refresh_token)).status).toBe(200);
+  });
+  it('rejects simultaneous reuse even when KV reads the same current token', async () => {
+    const info = await setup();
+    const initial = await exchange(info, await approve(info));
+    const tokens = await initial.json() as { access_token: string; refresh_token: string };
+    const responses = await Promise.all([refresh(info.clientId, tokens.refresh_token), refresh(info.clientId, tokens.refresh_token)]);
+    expect(responses.map(response => response.status).sort()).toEqual([200, 400]);
+    const issued = await responses.find(response => response.status === 200)!.json() as { access_token: string; refresh_token: string };
+    expect((await refresh(info.clientId, issued.refresh_token)).status).toBe(400);
+    for (const token of [tokens.access_token, issued.access_token]) {
+      expect((await request('/mcp', { headers: { Authorization: `Bearer ${token}` } })).status).toBe(401);
+    }
+  });
+  it('detects replay of a token older than the provider previous-token slot', async () => {
+    const info = await setup();
+    const initial = await exchange(info, await approve(info));
+    const tokens = await initial.json() as { refresh_token: string };
+    const first = await refresh(info.clientId, tokens.refresh_token);
+    expect(first.status).toBe(200);
+    const firstRotation = await first.json() as { refresh_token: string };
+    const second = await refresh(info.clientId, firstRotation.refresh_token);
+    expect(second.status).toBe(200);
+    const latest = await second.json() as { access_token: string; refresh_token: string };
+    expect((await refresh(info.clientId, tokens.refresh_token)).status).toBe(400);
+    expect((await refresh(info.clientId, latest.refresh_token)).status).toBe(400);
+    expect((await request('/mcp', { headers: { Authorization: `Bearer ${latest.access_token}` } })).status).toBe(401);
+  });
+  it('masks CIMD URLs and upstream error details in logs', async () => {
+    const admin = await login();
+    const clientId = 'https://metadata.example/12345678-1234-4234-8234-123456789abc/aB9xK2mN7qR4sT6uV8wY1zC3/metadata.json?token=private-query';
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error(`Failed to fetch ${clientId}: private-upstream-detail`));
+    const logger = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const response = await request('/authorize?' + new URLSearchParams({ client_id: clientId, redirect_uri: 'https://client.example/callback',
+      response_type: 'code', scope: 'hey:read', resource: `${origin}/mcp`, code_challenge: await hash(randomToken()), code_challenge_method: 'S256' }),
+      { headers: { Cookie: admin.cookie } });
+    expect(response.status).toBe(503);
+    expect(fetcher).toHaveBeenCalled();
+    const logs = [...logger.mock.calls, ...errors.mock.calls].map(call => call.join(' ')).join('\n');
+    expect(logs).toContain('oauth_cimd_fetch_failed');
+    expect(logs).toContain('https://metadata.example/***/***/metadata.json?token=***');
+    expect(logs).not.toContain('clientIdHash');
+    for (const privateValue of [clientId, '12345678-1234-4234-8234-123456789abc', 'aB9xK2mN7qR4sT6uV8wY1zC3', 'private-query', 'private-upstream-detail']) {
+      expect(logs).not.toContain(privateValue);
     }
   });
 });

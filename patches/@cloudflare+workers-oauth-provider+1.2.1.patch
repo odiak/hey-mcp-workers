@@ -1,0 +1,56 @@
+diff --git a/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts b/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts
+index b450880..6c2f54f 100644
+--- a/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts
++++ b/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts
+@@ -772,6 +772,9 @@ interface TokenExchangeCallbackResult {
+  * Options for token exchange callback functions
+  */
+ interface TokenExchangeCallbackOptions<Env = Cloudflare.Env> {
++  /** Local security patch: verified refresh-token hash and previous-token reuse flag. */
++  refreshTokenId?: string;
++  refreshTokenReused?: boolean;
+   /**
+    * The type of grant being processed.
+    */
+@@ -1060,6 +1063,8 @@ interface OAuthProviderOptions<Env = Cloudflare.Env> {
+    * If the callback returns nothing or undefined for a props field, the original props will be used.
+    */
+   tokenExchangeCallback?: (options: TokenExchangeCallbackOptions<Env>) => Promise<TokenExchangeCallbackResult | void> | TokenExchangeCallbackResult | void;
++  /** Local security patch: check consumed hashes after client authentication, including tokens older than the previous token. */
++  refreshTokenReuseCallback?: (options: { clientId: string; refreshTokenId: string; env: Env }) => Promise<boolean>;
+   /**
+    * Optional callback called when a provided bearer credential was not found
+    * in the internal KV. It can validate an external OAuth access token, opaque
+diff --git a/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.js b/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.js
+index 5ff842d..928aedf 100644
+--- a/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.js
++++ b/node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.js
+@@ -3308,6 +3308,10 @@ var OAuthProviderImpl = class {
+ 		});
+ 		const [userId, grantId, _] = tokenParts;
+ 		const providedTokenHash = await generateTokenId(refreshToken);
++		if (this.options.refreshTokenReuseCallback && await this.options.refreshTokenReuseCallback({ clientId: clientInfo.clientId, refreshTokenId: providedTokenHash, env })) return this.createErrorResponse("invalid_grant", { description: "Refresh token reuse detected. Authorize a new connection." }, {
++			category: "refresh-token-grant",
++			reason: "refresh_token_reused"
++		});
+ 		const grantKey = `grant:${userId}:${grantId}`;
+ 		const grantData = await env.OAUTH_KV.get(grantKey, { type: "json" });
+ 		if (!grantData) return this.createErrorResponse("invalid_grant", { description: "Grant not found" }, {
+@@ -3356,6 +3360,8 @@ var OAuthProviderImpl = class {
+ 			let accessTokenProps = decryptedProps;
+ 			const callbackOptions = {
+ 				grantType: GrantType.REFRESH_TOKEN,
++				refreshTokenId: providedTokenHash,
++				refreshTokenReused: isPreviousToken,
+ 				clientId: clientInfo.clientId,
+ 				subjectClientId: grantData.clientId,
+ 				userId,
+@@ -4333,7 +4339,7 @@ var OAuthProviderImpl = class {
+ 			try {
+ 				return await fetchClientIdMetadataDocument(clientId, this.serverCapabilities);
+ 			} catch (error) {
+-				console.warn(`CIMD fetch failed for ${clientId}:`, error instanceof Error ? error.message : error);
++				this.options.onError({ code: "invalid_client_metadata", status: 503, description: "Client metadata could not be fetched", internal: { category: "client-id-metadata-document", reason: "cimd_fetch_failed", detail: clientId } });
+ 				throw new CimdFetchError(clientId, error);
+ 			}
+ 		}
