@@ -34,7 +34,8 @@ export function authorizationServer(env: CloudflareEnv, origin: string): OAuthAu
     clientRegistrationEndpoint: '/oauth/register',
     clientIdMetadataDocumentEnabled: true,
     scopesSupported: [...scopes, 'offline_access'],
-    accessTokenTTL: 900, refreshTokenTTL: 30 * 86400, clientRegistrationTTL: 90 * 86400,
+    // Explicit undefined disables expiry; omitting these options uses the provider defaults.
+    accessTokenTTL: 900, refreshTokenTTL: undefined, clientRegistrationTTL: undefined,
     async clientRegistrationCallback({ request }) {
       const address = request.headers.get('CF-Connecting-IP') ?? 'local';
       if (!await env.OWNER.getByName('owner').limit(`register:${await hash(address)}`, 30, 3600)) {

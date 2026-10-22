@@ -34,6 +34,17 @@ describe('owner coordination', () => {
     unwrap(await stub.command({ type: 'logout', token: result.token }));
     expect(await stub.session(result.token)).toBeNull();
   });
+  it('preserves expiry for existing connections without expiring new connections', async () => {
+    const stub = owner();
+    unwrap(await stub.command({ type: 'import', credentials: fixture() }));
+    const id = unwrap(await stub.command({ type: 'create', clientId: 'client', name: 'test', redirectUri: 'https://client.example/callback', scopes: ['hey:read'] })) as string;
+    expect(await stub.activeConnection(id)).toMatchObject({ expiresAt: null });
+    await runInDurableObject(stub, async (instance, state) => {
+      const connection = await instance.activeConnection(id);
+      state.storage.sql.exec('UPDATE connections SET data = ? WHERE id = ?', JSON.stringify({ ...connection, expiresAt: Date.now() - 1 }), id);
+    });
+    expect(await stub.activeConnection(id)).toBeNull();
+  });
   it('limits login attempts', async () => {
     const stub = owner();
     for (let i = 0; i < 10; i++) expect(unwrap(await stub.command({ type: 'login', secret: 'wrong', address: 'same-address' }))).toBeNull();

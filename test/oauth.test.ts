@@ -267,6 +267,29 @@ describe('HTTP and OAuth boundaries', () => {
     expect((await refresh(info.clientId, latest.refresh_token)).status).toBe(400);
     expect((await request('/mcp', { headers: { Authorization: `Bearer ${latest.access_token}` } })).status).toBe(401);
   });
+  it('keeps connections refreshable after a year while access tokens expire after 15 minutes', async () => {
+    const info = await setup();
+    const initial = await exchange(info, await approve(info));
+    expect(initial.status).toBe(200);
+    const tokens = await initial.json() as { access_token: string; refresh_token: string; expires_in: number };
+    expect(tokens.expires_in).toBe(900);
+    const issuedAt = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(issuedAt + 901_000);
+    expect((await request('/mcp', { headers: { Authorization: `Bearer ${tokens.access_token}` } })).status).toBe(401);
+    clock.mockReturnValue(issuedAt + 366 * 86400_000);
+    const response = await refresh(info.clientId, tokens.refresh_token);
+    expect(response.status).toBe(200);
+    const rotated = await response.json() as { access_token: string; refresh_token: string; expires_in: number };
+    expect(rotated.expires_in).toBe(900);
+    expect((await mcp(rotated.access_token, 'tools/list')).response.status).toBe(200);
+    // A consumed token must remain detectable even after the former 30-day deadline.
+    clock.mockReturnValue(issuedAt + 400 * 86400_000);
+    const next = await refresh(info.clientId, rotated.refresh_token);
+    expect(next.status).toBe(200);
+    const latest = await next.json() as { refresh_token: string };
+    expect((await refresh(info.clientId, tokens.refresh_token)).status).toBe(400);
+    expect((await refresh(info.clientId, latest.refresh_token)).status).toBe(400);
+  });
   it('masks CIMD URLs and upstream error details in logs', async () => {
     const admin = await login();
     const clientId = 'https://metadata.example/12345678-1234-4234-8234-123456789abc/aB9xK2mN7qR4sT6uV8wY1zC3/metadata.json?token=private-query';

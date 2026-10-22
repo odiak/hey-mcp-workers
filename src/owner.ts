@@ -5,7 +5,7 @@ import { decrypt, encrypt, type Envelope, hash, HttpError, randomToken, secretEq
 
 export type Connection = {
   id: string; clientId: string; name: string; redirectUri: string; scopes: string[];
-  createdAt: number; expiresAt: number; revokedAt: number | null; lastUsedAt: number | null;
+  createdAt: number; expiresAt: number | null; revokedAt: number | null; lastUsedAt: number | null;
 };
 export type Session = { csrf: string };
 type CredentialState = { configured: boolean; reauthRequired: boolean; updatedAt: number; verifiedAt: number | null; refreshAfter: number };
@@ -144,7 +144,7 @@ export class Owner extends DurableObject<CloudflareEnv> {
     if (this.deletingCredentials || !state.configured || state.reauthRequired) throw new HttpError(409, '先にHEYの認証情報を登録してください。');
     const id = crypto.randomUUID();
     this.writeConnection({ id, clientId, name, redirectUri, scopes: approved, createdAt: Date.now(),
-      expiresAt: Date.now() + 30 * 86400_000, revokedAt: null, lastUsedAt: null });
+      expiresAt: null, revokedAt: null, lastUsedAt: null });
     return id;
   }
 
@@ -157,7 +157,7 @@ export class Owner extends DurableObject<CloudflareEnv> {
     const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM connections WHERE id = ?', id).toArray()[0];
     if (!row) return null;
     const value = JSON.parse(row.data) as Connection;
-    return value.revokedAt || value.expiresAt <= Date.now() ? null : value;
+    return value.revokedAt || (value.expiresAt !== null && value.expiresAt <= Date.now()) ? null : value;
   }
 
   async revokeConnection(id: string): Promise<void> {
@@ -170,13 +170,14 @@ export class Owner extends DurableObject<CloudflareEnv> {
     const connection = this.getActiveConnection(id);
     if (!connection) return false;
     const now = Date.now();
-    this.ctx.storage.sql.exec('DELETE FROM refresh_tokens WHERE expires <= ?', now);
+    this.ctx.storage.sql.exec('DELETE FROM refresh_tokens WHERE expires > 0 AND expires <= ?', now);
     const used = this.ctx.storage.sql.exec('SELECT token_hash FROM refresh_tokens WHERE token_hash = ?', tokenHash).toArray().length > 0;
     if (reused || used) {
       this.writeConnection({ ...connection, revokedAt: now });
       return false;
     }
-    this.ctx.storage.sql.exec('INSERT INTO refresh_tokens VALUES (?, ?, ?)', tokenHash, id, connection.expiresAt);
+    // Zero means no expiry in the existing NOT NULL column.
+    this.ctx.storage.sql.exec('INSERT INTO refresh_tokens VALUES (?, ?, ?)', tokenHash, id, connection.expiresAt ?? 0);
     return true;
   }
 
